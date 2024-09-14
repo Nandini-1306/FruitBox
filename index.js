@@ -9,9 +9,10 @@ const methodOverride = require('method-override');
 const cors = require('cors');
 app.use(cors({
     origin: 'http://localhost:5173', // React app's address
-    credentials: true // To allow cookies to be sent
+    credentials: true // 
 }));
 
+app.use(bodyParser.json());
 
 app.use(methodOverride('_method')); // This allows you to use _method to simulate PUT and PATCH
 
@@ -93,36 +94,38 @@ app.post('/register/vendor', (req, res) => {
 
 // Handling user login
 
+// Handling user login
 app.post('/login/user', (req, res) => {
     const { userEmail, userPassword } = req.body;
 
-    console.log('Request Body:', req.body); // Debugging log
-    console.log('Email entered:', userEmail);  // Log email entered
-    console.log('Password entered:', userPassword);  // Log password entered
+    console.log('Request Body:', req.body);
+    console.log('Email entered:', userEmail);
+    console.log('Password entered:', userPassword);
 
     db.query('SELECT * FROM user WHERE userEmail = ? AND userPassword = ?', [userEmail, userPassword], (err, results) => {
         if (err) {
-            console.error('Database error:', err); // Log database error
-            return res.send('An error occurred, please try again.');
+            console.error('Database error:', err);
+            return res.status(500).json({ message: 'An error occurred, please try again.' });
         }
 
-        console.log('Database results:', results);  // Log the results from the database
+        console.log('Database results:', results);
 
         if (results.length > 0) {
-            // Corrected: Match the field name with database key 'userID'
-            req.session.userID = results[0].userID;  // If login successful, create a session
+            req.session.userID = results[0].userID;
             req.session.userName = results[0].userName;
             req.session.userEmail = results[0].userEmail;
             req.session.userPassword = results[0].userPassword;
             req.session.userAddress = results[0].userAddress;
             req.session.userPhoneNumber = results[0].userPhoneNumber;
-            console.log('Session after login:', req.session); // Log session details
-            res.render('homeUser' , {userName: req.session.userName}); // Successfully redirecting to dashboard
-        } else{
-            res.send("Incorrect password and email");
+            console.log('Session after login:', req.session);
+
+            res.json({ user: req.session.userName }); // Return user data
+        } else {
+            res.status(401).json({ message: 'Incorrect email or password' });
         }
     });
 });
+
 
 //vendor login
 app.post('/login/vendor', (req, res) => {
